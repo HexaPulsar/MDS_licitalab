@@ -15,7 +15,7 @@ DEBUG = True
 
 if __name__ == "__main__":
 
-    print("Loading csv")
+    print("Loading csv") 
     df = pd.read_csv(yaml_data['PATH_TO_CSV'],
                      encoding="utf-8" , 
                      nrows=yaml_data['N_ROWS'])

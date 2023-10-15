@@ -168,3 +168,5 @@ Modeling/20231007200103_query_results.csv
 Modeling/ProviderDescriptionBased/csv/kmeans_clusters_test.csv
 Modeling/ProviderDescriptionBased/csv/vectorized_corpus.csv
 Modeling/ProviderDescriptionBased/csv/vectorized_corpus.csv
+Modeling/ProviderDescriptionBased/utils/generate_kmeans.py
+Modeling/ProviderDescriptionBased/csv/vectorized_corpus.csv
