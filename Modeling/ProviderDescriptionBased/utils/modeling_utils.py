@@ -6,20 +6,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.cluster import KMeans, DBSCAN
-from unidecode import unidecode
-import nltk
-from nltk.stem import SnowballStemmer
-from nltk.corpus import stopwords
-from sklearn.metrics.pairwise import euclidean_distances,cosine_distances
-import scipy
-
+from unidecode import unidecode 
+from sklearn.metrics.pairwise import euclidean_distances
+import scipy 
 
 def generate_vectorized_corpus(corpus: pd.Series):
     corpus = corpus.unique()
     vectorizer = CountVectorizer()
     vectorized_data = vectorizer.fit_transform(corpus) 
     return vectorizer, vectorized_data
-
 
 def generate_vector(str:str,vectorized_corpus: scipy.sparse._csr.csr_matrix):
     vector = vectorized_corpus.transform([str])
@@ -30,13 +25,11 @@ def generate_vector(str:str,vectorized_corpus: scipy.sparse._csr.csr_matrix):
 
 def tsne_reduction(data):
     tsne = TSNE(n_components=2, random_state=42)
-    tsne_data = tsne.fit_transform(data.toarray())
+    tsne_data = tsne.fit_transform(data)#.toarray())
     return tsne_data
-
 
 def auto_elbow_method(data,n_clusters_range:np.linspace,_n_init = 5, _random_state = 42, plot = False):
     # Range of cluster numbers to try
-
     # Initialize an empty list to store the variance explained by each cluster
     inertia = []
 
@@ -62,7 +55,6 @@ def auto_elbow_method(data,n_clusters_range:np.linspace,_n_init = 5, _random_sta
 
     return n_clusters
 
-
 def launch_kmeans(n_clusters:int,data,corpus, plot:bool = False):
     # Apply K-Means clustering
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
@@ -75,10 +67,10 @@ def launch_kmeans(n_clusters:int,data,corpus, plot:bool = False):
         for i in range(n_clusters):
             ax.scatter(data[cluster_assignments == i, 0], data[cluster_assignments == i, 1], label=f'Cluster {i}', marker= '.')
         plt.show()
+    print(corpus.shape,cluster_assignments.shape)
     # Create a DataFrame to associate original strings with clusters
     data_with_clusters = pd.DataFrame({'feature_vector': corpus, 'Cluster': cluster_assignments})
     return kmeans,data_with_clusters
-
 
 def launch_dbscan(eps:float or int,min_samples:int, data, str_corpus, plot:bool = False):
     dbscan = DBSCAN(eps=6, min_samples=80)
@@ -111,6 +103,7 @@ def predict_user_item_cluster(df,_vectorizer,_vectorized_data,_items_to_consider
 
 def get_cluster_data(cluster, cluster_method):
     cluster_data = cluster_method[cluster_method['Cluster'] == cluster]
+    #print(cluster_data.shape)
     return cluster_data
 
 def match_cluster_data_with_agilebuy(_user_df,_df,_vectorizer,_vectorized_data,_items_to_consider,_cluster_method):
@@ -120,7 +113,9 @@ def match_cluster_data_with_agilebuy(_user_df,_df,_vectorizer,_vectorized_data,_
                                                           _items_to_consider,
                                                           _cluster_method),
                                                           _cluster_method)
+
     gg = _df.merge(match_df,on='feature_vector', how='left')
+    #print(gg)
     return gg
 
 def plot_vector(vector):
@@ -131,11 +126,6 @@ def plot_vector(vector):
 
 def plot_rec_categories(user,exploration_query):
     fig, ax = plt.subplots()  # Create a Matplotlib figure and an AxesSubplot
-
-    # Your data processing and plotting code here
-
-    # Add the AxesSubplot to the existing figure
     ax = exploration_query.groupby(by='first_two_digits_code').count()['organismosolicitante'].plot.bar(ax=ax, title=f'Principales categorías recomendadas para el "{user}"')
     # Now, 'fig' contains the entire figure with your bar plot
     return ax
-    #plt.show()
