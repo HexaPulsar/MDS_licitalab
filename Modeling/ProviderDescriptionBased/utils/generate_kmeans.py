@@ -1,73 +1,54 @@
-import pandas as pd 
-from unidecode import unidecode 
+
+import seaborn as sns
+import numpy as np
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.cluster import KMeans, DBSCAN
+from unidecode import unidecode
+import nltk
+from nltk.stem import SnowballStemmer
+from nltk.corpus import stopwords
+from sklearn.metrics.pairwise import euclidean_distances,cosine_distances
 from modeling_utils import *
 import yaml
 import pickle
-import os
-import tqdm
 
-with open('Modeling/ProviderDescriptionBased/config/config.yaml', 'r') as file:
+with open('Modeling/ProviderDescriptionBased/config.yaml', 'r') as file:
     yaml_data = yaml.load(file, Loader=yaml.FullLoader)
-    for dat in yaml_data:
-        print(dat)
 
-DEBUG = True
+DEBUG = False
 
 if __name__ == "__main__":
 
+    #TODO remove corpus generation from main. It should only load already constructed csr matrix from a csv.
     print("Loading csv")
     df = pd.read_csv(yaml_data['PATH_TO_CSV'],
                      encoding="utf-8" , 
                      nrows=yaml_data['N_ROWS'])
     print("Cleaning csv")
-    df['first_two_digits_code'] = df['agileitemsmp_id'].apply(lambda x: str(x)[:2])
-    df['feature_vector']= df['first_two_digits_code'] + ' '+ df['agileoffereditemsdescripcionofertada']
+    df['first_two_digits_code'] = df['agilebuyingscode'].apply(lambda x: x[:2])
+    df['feature_vector']=  df['first_two_digits_code'] + ' '+ df['agileoffereditemsdescripcionofertada']
     corpus = df['feature_vector'].apply(lambda x: unidecode(x).lower())
 
-    file_path_vectorizer = os.path.join(os.getcwd(), 
-                                'Modeling', 
-                                'ProviderDescriptionBased', 
-                                'models',
-                                'count_vectorized_model.pkl')
-    
-
-    with open(file_path_vectorizer, 'rb') as model_file:
+    with open('count_vectorizer_model.pkl', 'rb') as model_file:
         vectorizer = pickle.load(model_file)
-     
 
-    file_path_vectorized_c = os.path.join(os.getcwd(), 
-                                        'Modeling', 
-                                        'ProviderDescriptionBased', 
-                                        'csv',
-                                        'vectorized_corpus.csv')
-    vectorized_corpus = pd.read_csv(file_path_vectorized_c)
-
+    vectorized_corpus = pd.read_csv('vectorized_corpus.csv')
     print('Dimensionality Reduction')
     tsne_data = tsne_reduction(vectorized_corpus)
     auto_n_cluster = auto_elbow_method(tsne_data,
-                                     np.linspace(yaml_data['ELBOW_MIN'],yaml_data['ELBOW_MAX'],yaml_data['ELBOW_N'],dtype = int),
+                                     yaml_data['ELBOW_RANGE_LINSPACE'],
                                      plot = DEBUG)  
-    print('Generating Kmeans clusters')
+     
     kmeans_model, kmeans_clusters = launch_kmeans(auto_n_cluster,
                                     tsne_data,
                                     corpus.unique(),
                                     plot=DEBUG)
-    
-    file_path_model = os.path.join(os.getcwd(), 
-                                'Modeling', 
-                                'ProviderDescriptionBased', 
-                                'models',
-                                'kmeans_model.pkl')
-    print('Exporting Kmeans model')
-    with open(file_path_model, 'wb') as model_file:
+    with open('count_vectorizer_model.pkl', 'wb') as model_file:
         pickle.dump(kmeans_model, model_file)
+    
+    kmeans_clusters.to_csv('kmeans_clusters.csv',index = False)
 
-    file_path = os.path.join(os.getcwd(), 
-                        'Modeling', 
-                        'ProviderDescriptionBased', 
-                        'csv',
-                        'kmeans_clusters.csv')
-
-    kmeans_clusters.to_csv(file_path, index=False)
-
-    print('Done')
+    
