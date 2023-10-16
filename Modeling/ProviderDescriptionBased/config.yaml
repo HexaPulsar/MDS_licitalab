@@ -1,0 +1,12 @@
+
+DEBUG: False
+
+PATH_TO_CSV: 'C:\Users\magda\OneDrive\Escritorio\MDS_licitalab\Modeling\20231007200103_query_results.csv'
+N_ROWS: 15000
+
+ELBOW_MIN: 10 
+ELBOW_MAX: 100
+ELBOW_N: 15
+ITEMS_TO_CONSIDER: 10
+USE_AWARDED: False
+CLUSTERIZATION_TYPE: 'kmeans'
