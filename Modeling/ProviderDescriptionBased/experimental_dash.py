@@ -3,7 +3,7 @@ import plotly.express as px
 import pandas as pd
 import yaml
 from unidecode import unidecode
-from utils.modeling_utils import *
+from modeling_utils.modeling_utils import *
 from dash import Dash, html, dash_table, dcc
 import pandas as pd
 import pickle
@@ -35,7 +35,6 @@ file_path_kmeans = os.path.join(os.getcwd(),
 vectorized_corpus =pd.read_csv(file_path_vectorized_c)
 kmeans_clusters = pd.read_csv(file_path_kmeans)
 
-
 df['first_two_digits_code'] = df['agileitemsmp_id'].apply(lambda x: str(x)[:2])
 df['feature_vector']=  df['first_two_digits_code'] + ' '+ df['agileoffereditemsdescripcionofertada']
 corpus = df['feature_vector'].apply(lambda x: unidecode(x).lower())
@@ -64,7 +63,7 @@ app.layout = html.Div([
             'white-space': 'normal',  # Enable word wrapping
             'text-align': 'left',     # Align text to the left
         },
-        page_size = 30
+        page_size = 10
     ),
     dcc.Graph(
         id='bar-plot'
@@ -103,7 +102,8 @@ def update_table(table):
     save = exploration_query.groupby(by = 'first_two_digits_code').count()['agileitemsproductcategory'].reset_index()
      
     fig = px.bar(save, x='first_two_digits_code', y='agileitemsproductcategory', title='Categorías Presentes')
-    data = exploration_query.groupby(by='agilebuyingsdescription').count()['agileitemsproductcategory'].reset_index()
+    data = exploration_query.groupby(by=['agilebuyingsdescription','agileitemsproductcategory']).count().reset_index()
+    data = data[['agilebuyingsdescription','agileitemsproductcategory']].sort_values(by='agileitemsproductcategory')
    
     columns = [{'name': col, 'id': col} for col in data.columns]
     data = data.to_dict('records')

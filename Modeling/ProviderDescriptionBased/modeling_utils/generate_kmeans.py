@@ -1,10 +1,10 @@
 import pandas as pd 
 from unidecode import unidecode 
 from modeling_utils import *
+
 import yaml
 import pickle
-import os
-import tqdm
+import os 
 
 with open('Modeling/ProviderDescriptionBased/config/config.yaml', 'r') as file:
     yaml_data = yaml.load(file, Loader=yaml.FullLoader)
@@ -48,6 +48,7 @@ if __name__ == "__main__":
                                      np.linspace(yaml_data['ELBOW_MIN'],yaml_data['ELBOW_MAX'],yaml_data['ELBOW_N'],dtype = int),
                                      plot = DEBUG)  
     print('Generating Kmeans clusters')
+    
     kmeans_model, kmeans_clusters = launch_kmeans(auto_n_cluster,
                                     tsne_data,
                                     corpus.unique(),

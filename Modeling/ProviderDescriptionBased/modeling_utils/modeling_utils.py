@@ -67,6 +67,7 @@ def launch_kmeans(n_clusters:int,data,corpus, plot:bool = False):
         for i in range(n_clusters):
             ax.scatter(data[cluster_assignments == i, 0], data[cluster_assignments == i, 1], label=f'Cluster {i}', marker= '.')
         plt.show()
+        plt.savefig('kmeans_plot.png')
     print(corpus.shape,cluster_assignments.shape)
     # Create a DataFrame to associate original strings with clusters
     data_with_clusters = pd.DataFrame({'feature_vector': corpus, 'Cluster': cluster_assignments})
@@ -103,7 +104,6 @@ def predict_user_item_cluster(df,_vectorizer,_vectorized_data,_items_to_consider
 
 def get_cluster_data(cluster, cluster_method):
     cluster_data = cluster_method[cluster_method['Cluster'] == cluster]
-    #print(cluster_data.shape)
     return cluster_data
 
 def match_cluster_data_with_agilebuy(_user_df,_df,_vectorizer,_vectorized_data,_items_to_consider,_cluster_method):
