@@ -41,7 +41,7 @@ def auto_elbow_method(data,n_clusters_range:np.linspace,_n_init = 5, _random_sta
 
     if plot:
         # Create the Elbow Method graph
-        plt.figure(figsize=(10, 4))
+        plt.figure(figsize=(20, 8))
         plt.plot(n_clusters_range, inertia, marker='o')
         plt.title('Elbow Method for Optimal K')
         plt.xlabel('Number of Clusters (K)')
@@ -63,18 +63,21 @@ def launch_kmeans(n_clusters:int,data,corpus, plot:bool = False):
     # Create a scatter plot with different colors for each cluster
 
     if plot:
-        fig,ax = plt.subplots(figsize=(8, 8))
-        for i in range(n_clusters):
-            ax.scatter(data[cluster_assignments == i, 0], data[cluster_assignments == i, 1], label=f'Cluster {i}', marker= '.')
+        plt.figure(figsize=(8,8 ))
+        sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=cluster_assignments, s=70,marker = '.',palette='hls', legend=False)
+        plt.title('Kmeans Clustering Results')
+        plt.xlabel('Dimension 1')
+        plt.ylabel('Dimension 2')
+        
         plt.show()
-        plt.savefig('kmeans_plot.png')
+        #plt.savefig('kmeans_plot.png')
     print(corpus.shape,cluster_assignments.shape)
     # Create a DataFrame to associate original strings with clusters
     data_with_clusters = pd.DataFrame({'feature_vector': corpus, 'Cluster': cluster_assignments})
     return kmeans,data_with_clusters
 
 def launch_dbscan(eps:float or int,min_samples:int, data, str_corpus, plot:bool = False):
-    dbscan = DBSCAN(eps=6, min_samples=80)
+    dbscan = DBSCAN(eps=eps, min_samples=min_samples)
     cluster_assignments = dbscan.fit_predict(data)
     data_with_clusters = pd.DataFrame({'feature_vector': str_corpus, 'Cluster': cluster_assignments})
     if plot:

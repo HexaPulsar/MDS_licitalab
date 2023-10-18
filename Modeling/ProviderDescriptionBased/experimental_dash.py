@@ -101,9 +101,11 @@ def update_table(table):
     exploration_query = gg.query(f"Cluster == {cluster_number} and taxnumberprovider != '{user}'") 
     save = exploration_query.groupby(by = 'first_two_digits_code').count()['agileitemsproductcategory'].reset_index()
      
-    fig = px.bar(save, x='first_two_digits_code', y='agileitemsproductcategory', title='Categorías Presentes')
+    fig = px.bar(save, x='first_two_digits_code', y='agileitemsproductcategory', title='Categorías Presentes en las Recomendaciones')
     data = exploration_query.groupby(by=['agilebuyingsdescription','agileitemsproductcategory']).count().reset_index()
-    data = data[['agilebuyingsdescription','agileitemsproductcategory']].sort_values(by='agileitemsproductcategory')
+    data['Score']= pd.DataFrame({'Score' :np.zeros(data.shape[1])})
+    
+    data = data[['agilebuyingsdescription','agileitemsproductcategory','Score']].sort_values(by='agileitemsproductcategory')
    
     columns = [{'name': col, 'id': col} for col in data.columns]
     data = data.to_dict('records')
