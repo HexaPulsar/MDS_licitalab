@@ -4,3 +4,13 @@
 2. `experimental_dash.py` lanza un dashboard para explorar las recomendaciones hechas por un cliente.
 3. `modeling_utils.py` es un script auxiliar donde se encuentran definidas funciones de utilidad para el funcionamiento del sistema de recomendaciones.
 4. `generate_corpus.py` podria usarse en el futuro para generar un corpus permanente del cual crear recomendaciones.
+
+
+
+
+## Hito 4
+
+- Usamos todo el dataset (antes 500000 filas).
+- Modelo con OOP 
+- Espacio congruente (user vector space y user consult vector)
+

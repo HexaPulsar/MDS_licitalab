@@ -108,7 +108,7 @@ def predict_user_item_cluster(df,_vectorizer,_vectorized_data,_items_to_consider
 def get_cluster_data(cluster, cluster_method):
     cluster_data = cluster_method[cluster_method['Cluster'] == cluster]
     return cluster_data
-
+    
 def match_cluster_data_with_agilebuy(_user_df,_df,_vectorizer,_vectorized_data,_items_to_consider,_cluster_method):
     match_df = get_cluster_data(predict_user_item_cluster(_user_df,
                                                           _vectorizer,

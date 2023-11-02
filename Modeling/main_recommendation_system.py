@@ -10,7 +10,7 @@ import nltk
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 from sklearn.metrics.pairwise import euclidean_distances,cosine_distances
-from utils.modeling_utils import *
+from Modeling.ProviderDescriptionBased.modeling_utils.modeling_utils import *
 import yaml
 
 with open('Modeling/ProviderDescriptionBased/config.yaml', 'r') as file:

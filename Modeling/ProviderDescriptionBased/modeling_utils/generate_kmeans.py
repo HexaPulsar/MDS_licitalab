@@ -1,6 +1,6 @@
 import pandas as pd 
-from unidecode import unidecode 
-from modeling_utils import *
+from unidecode import unidecode  
+from Modeling.ProviderDescriptionBased.modeling_utils.modeling_utils import *
 
 import yaml
 import pickle
@@ -40,6 +40,7 @@ if __name__ == "__main__":
                                         'ProviderDescriptionBased', 
                                         'csv',
                                         'vectorized_corpus.csv')
+    
     vectorized_corpus = pd.read_csv(file_path_vectorized_c)
 
     print('Dimensionality Reduction')
@@ -70,5 +71,4 @@ if __name__ == "__main__":
                         'kmeans_clusters.csv')
 
     kmeans_clusters.to_csv(file_path, index=False)
-
     print('Done')

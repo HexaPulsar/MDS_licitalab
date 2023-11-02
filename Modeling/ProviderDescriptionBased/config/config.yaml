@@ -5,7 +5,7 @@ PATH_TO_CSV: 'C:\Users\magda\OneDrive\Escritorio\MDS_licitalab\Modeling\20231007
 N_ROWS: 500000
 
 
-# Linspace config
+# Linspace config for clusterization
 ELBOW_MIN: 20
 ELBOW_MAX: 100
 ELBOW_N: 50
