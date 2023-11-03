@@ -21,8 +21,10 @@ class RecommenderSystem(UserSpaceGenerator):
         is_subset = set(self.check_files).issubset(self.files_in_directory)
         
         if not is_subset:
-                super().__init__(DF,save_path=save_path, autoinitialize = True, autosave=True)
+            print("Models and Dataframes not found, initializing a Recommender System from zero.")
+            super().__init__(DF,save_path=save_path, autoinitialize = True, autosave=True)
         else:
+            print('All necesary files have been found.')
             with open(f"{save_path}/kmeans_model.pkl", "rb") as file:
                 self.cluster_model = pickle.load(file)
             with open(f"{save_path}/count_vectorizer_model.pkl", "rb") as file:

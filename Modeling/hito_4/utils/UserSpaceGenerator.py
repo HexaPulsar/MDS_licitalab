@@ -21,14 +21,13 @@ class UserSpaceGenerator(UserVector):
             self.tsne_data = self.tsne_reduction()
             self.kmeans_model, self.data_with_clusters = self.launch_kmeans(30,
                                                                             self.tsne_data,
-                                                                            self.corpus,
                                                                             plot=True)
         self.save_path = save_path
         if autosave:
             self.export_kmeans_model_and_data()
             self.export_vectorizer()
             self.export_vectorized_corpus()
-             
+    
     def generate_corpus(self, n_strings:int = 10, to_csv:bool = False):
         """generates list of UserVector objects from a list of <n_string> taxnumberprovider. 
             

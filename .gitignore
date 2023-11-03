@@ -161,3 +161,8 @@ cython_debug/
 Modeling/20231007200103_query_results.csv
 Modeling/ProviderDescriptionBased/csv/kmeans_clusters.csv 
 Modeling/ProviderDescriptionBased/csv/vectorized_corpus.csv
+query_final_results_20231026023937.csv
+Modeling/query_final_results_marzo_20231026023937.csv.gz
+Modeling/query_final_results_mayo_20231026092933.csv.gz
+Modeling/query_final_results_abril_20231026092424.csv/query_final_results_20231026092424.csv
+Modeling/query_final_results_mayo_20231026092933.csv/query_final_results_20231026092933.csv

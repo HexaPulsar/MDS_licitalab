@@ -12,4 +12,4 @@ class UserVector:
         #    print('This user has no AgileBuys.')
          
         #print(self.strings)
-     
+        #TODO crear una funcion que describa al usuario
