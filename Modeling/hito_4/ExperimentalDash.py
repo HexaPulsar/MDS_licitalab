@@ -11,8 +11,6 @@ from tqdm import tqdm
 from unidecode import unidecode
 import plotly.express as px
 
-
-
 app = dash.Dash(__name__)
 
 #aqui cambiar file path
@@ -44,9 +42,11 @@ with tqdm(total=total_lines, desc = 'Loading Dataset') as pbar:
 # Concatenate the list of DataFrames into a single DataFrame
 df = pd.concat(dfs, ignore_index=True)
 
-df_empty = pd.DataFrame({'agilebuyingsdescription':[ ],'agileitemsproductcategory':[ ],'Score':[ ]})
-#print(df)
+df_empty = pd.DataFrame({'agilebuyingsdescription':[ ],'agileitemsproductcategory':[ ],'Score':[ ]}) 
+
+
 RS = RecommenderSystem(df,save_path=  os.path.dirname(os.path.abspath(__file__)))
+
 app.layout = html.Div([
     html.H1("Display DataFrame in Dash App with Dropdown and Bar Plot"),
     dcc.Dropdown(
@@ -73,15 +73,13 @@ app.layout = html.Div([
     Output('printed-text', 'children'),
     Output('data-table', 'data'),
     Output('bar-plot', 'figure'),
-   
     Input('data-dropdown', 'value')
 )
 def update_data(user):
     global df_empty  # Update the global DataFrame
-     
+
     cluster_number, gg = RS.predict(user)  # Load the selected CSV file
     exploration_query = gg.query(f"Cluster == {cluster_number}")
-    
     
     printed_text_content = [
         html.P("This is a printed text section."),

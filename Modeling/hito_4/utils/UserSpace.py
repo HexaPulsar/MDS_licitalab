@@ -1,11 +1,10 @@
 
 import pickle
 import os
-import pandas as pd
-from utils.UserSpaceGenerator import UserSpaceGenerator
+import pandas as pd 
 
 
-class UserSpace(UserSpaceGenerator):
+class UserSpace():
     def __init__(self, save_path) -> None:
         with open(f"{save_path}/kmeans_model.pkl", "rb") as file:
                 self.cluster_model = pickle.load(file)

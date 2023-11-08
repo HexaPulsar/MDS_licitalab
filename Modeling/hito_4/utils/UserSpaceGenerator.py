@@ -1,4 +1,3 @@
-
 from sklearn.feature_extraction.text import CountVectorizer
 from utils.UserVector import UserVector
 import pandas as pd
@@ -11,14 +10,20 @@ from sklearn.cluster import KMeans
 import seaborn as sns
 import numpy as np
 from utils.UserSpace import UserSpace
+
+
+
 class UserSpaceGenerator(UserVector):
     def __init__(self, DF:pd.DataFrame, save_path:str = os.getcwd(), autoinitialize = True,autosave = True) -> None:
         self.DF = DF
+        
         self.vectorizer = CountVectorizer()
         self.corpus,self.qualifying_users = self.generate_corpus()
         self.vectorized_corpus = self.vectorize_corpus()
+        
         if autoinitialize:
             self.tsne_data = self.tsne_reduction()
+            #TODO permitir definir el numero de clusters desde la definicion de clase o desde yaml file
             self.kmeans_model, self.data_with_clusters = self.launch_kmeans(30,
                                                                             self.tsne_data,
                                                                             plot=True)
@@ -29,11 +34,10 @@ class UserSpaceGenerator(UserVector):
             self.export_vectorized_corpus()
         self.user_space = UserSpace(save_path)
         
-        
+
     def generate_corpus(self, n_strings:int = 10, to_csv:bool = False):
         """generates list of UserVector objects from a list of <n_string> taxnumberprovider. 
             
-
         Args:
             n_strings (int, optional): number of strings to be considered when creating the UserVector objects. Defaults to 10.
             to_csv (bool, optional): whether to export these strings to a csv. Defaults to False.
@@ -44,7 +48,7 @@ class UserSpaceGenerator(UserVector):
         gb = self.DF.groupby(by =['taxnumberprovider']).agg({'agilebuyingscode':'nunique'})
         gb = gb.sort_values(by = 'agilebuyingscode')
         qualifying_users =  gb[gb['agilebuyingscode'] >= n_strings].index.values
-        print(f'Se han removido {round((gb.shape[0] -qualifying_users.shape[0])/gb.shape[0] *100,2)}% de taxnumberproviders, por tener < {n_strings} licitaciones. \n El numero de usuarios para crear el corpus será {qualifying_users.shape[0]}.')
+        print(f'Se han removido {round((gb.shape[0] - qualifying_users.shape[0])/gb.shape[0] *100,2)}% de taxnumberproviders, por tener < {n_strings} licitaciones. \n El numero de usuarios para crear el corpus será {qualifying_users.shape[0]}.')
          
         corpus = [' '.join(UserVector(i,self.df).strings) for i in tqdm(qualifying_users, desc = 'Selecting strings from each user')]
          
@@ -59,7 +63,7 @@ class UserSpaceGenerator(UserVector):
     
     def tsne_reduction(self):
         tsne = TSNE(n_components=2, init = 'random',random_state=42)
-        tsne_data = tsne.fit_transform(self.vectorized_corpus)#.toarray())
+        tsne_data = tsne.fit_transform(self.vectorized_corpus) 
         return tsne_data
 
     def auto_elbow_method(data,n_clusters_range:np.linspace,_n_init = 5, _random_state = 42, plot = False):
@@ -140,6 +144,8 @@ class UserSpaceGenerator(UserVector):
         print('Exporting Kmeans model')
         with open(self.save_path+'/kmeans_model.pkl', 'wb') as model_file:
             pickle.dump(self.kmeans_model, model_file)
+        print('Exporting Kmeans clusters')
+
         self.data_with_clusters.to_csv(self.save_path+'/kmeans_clusters.csv', index=False)
 
     def export_vectorizer(self):
@@ -152,5 +158,6 @@ class UserSpaceGenerator(UserVector):
          
 
     def export_vectorized_corpus(self):
+        print('Exporting vectorized corpus')
         self.vectorized_corpus = pd.DataFrame.sparse.from_spmatrix(self.vectorized_corpus)
         self.vectorized_corpus.to_csv(self.save_path+'/vectorized_corpus.csv', index = False)

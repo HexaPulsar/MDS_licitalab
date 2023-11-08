@@ -7,12 +7,16 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+
+
 class RecommenderSystem(UserSpaceGenerator):
     
     def __init__(self, DF:pd.DataFrame, save_path:str = os.getcwd(), autoinitialize = True,autosave = True) -> None:
         print("Initializing Recommender System")
         print(f"The current directory is {os.getcwd()}")
         self.df = DF
+        #TODO agregar log file que guarde metadata
         self.files_in_directory = os.listdir(save_path)
         self.check_files = ['kmeans_clusters.csv',
                             'vectorized_corpus.csv',
