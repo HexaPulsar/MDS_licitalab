@@ -1,6 +1,6 @@
 import pandas as pd 
 from unidecode import unidecode  
-from Modeling.ProviderDescriptionBased.modeling_utils.modeling_utils import *
+from modeling_utils import *
 
 import yaml
 import pickle

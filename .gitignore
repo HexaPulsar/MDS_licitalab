@@ -128,6 +128,8 @@ ENV/
 env.bak/
 venv.bak/
 
+llab
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -166,3 +168,4 @@ Modeling/query_final_results_marzo_20231026023937.csv.gz
 Modeling/query_final_results_mayo_20231026092933.csv.gz
 Modeling/query_final_results_abril_20231026092424.csv/query_final_results_20231026092424.csv
 Modeling/query_final_results_mayo_20231026092933.csv/query_final_results_20231026092933.csv
+Modeling/query_final_results_20231026092424.csv
