@@ -10,7 +10,7 @@ import os
 from sklearn.cluster import KMeans
 import seaborn as sns
 import numpy as np
-
+from utils.UserSpace import UserSpace
 class UserSpaceGenerator(UserVector):
     def __init__(self, DF:pd.DataFrame, save_path:str = os.getcwd(), autoinitialize = True,autosave = True) -> None:
         self.DF = DF
@@ -27,7 +27,9 @@ class UserSpaceGenerator(UserVector):
             self.export_kmeans_model_and_data()
             self.export_vectorizer()
             self.export_vectorized_corpus()
-    
+        self.user_space = UserSpace(save_path)
+        
+        
     def generate_corpus(self, n_strings:int = 10, to_csv:bool = False):
         """generates list of UserVector objects from a list of <n_string> taxnumberprovider. 
             

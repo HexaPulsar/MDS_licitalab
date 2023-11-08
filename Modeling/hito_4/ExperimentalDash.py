@@ -3,18 +3,13 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 import pandas as pd
-from dash import dash_table
-import plotly.graph_objs as go
+from dash import dash_table 
 from utils.RecommenderSystem import RecommenderSystem
 import os
 import numpy as np
 from tqdm import tqdm
 from unidecode import unidecode
 import plotly.express as px
-
-
-
-
 
 
 
