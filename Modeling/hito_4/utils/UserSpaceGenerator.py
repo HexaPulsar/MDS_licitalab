@@ -8,9 +8,9 @@ import pickle
 import os 
 from sklearn.cluster import KMeans
 import seaborn as sns
-import numpy as np
-from utils.UserSpace import UserSpace
-
+import numpy as np 
+import re
+from transformers import BertTokenizer, BertModel
 
 
 class UserSpaceGenerator(UserVector):
@@ -19,7 +19,10 @@ class UserSpaceGenerator(UserVector):
         
         self.vectorizer = CountVectorizer()
         self.corpus,self.qualifying_users = self.generate_corpus()
-        self.vectorized_corpus = self.vectorize_corpus()
+        self.tokenizer = BertTokenizer.from_pretrained('dccuchile/bert-base-spanish-wwm-cased')
+        self.model = BertModel.from_pretrained('dccuchile/bert-base-spanish-wwm-cased')
+        self.vectorized_corpus = self.BERT_vectorize_corpus()
+        print(self.vectorized_corpus.shape)
         
         if autoinitialize:
             self.tsne_data = self.tsne_reduction()
@@ -31,10 +34,8 @@ class UserSpaceGenerator(UserVector):
         if autosave:
             self.export_kmeans_model_and_data()
             self.export_vectorizer()
-            self.export_vectorized_corpus()
-        self.user_space = UserSpace(save_path)
+            self.export_vectorized_corpus() 
         
-
     def generate_corpus(self, n_strings:int = 10, to_csv:bool = False):
         """generates list of UserVector objects from a list of <n_string> taxnumberprovider. 
             
@@ -58,10 +59,56 @@ class UserSpaceGenerator(UserVector):
         
         return corpus,qualifying_users#{'corpus':corpus, 'qualifying_users':qualifying_users}
         
-    def vectorize_corpus(self):
-        return self.vectorizer.fit_transform(self.corpus) 
+    
+    def BERT_vectorize(self,string):
+        def preprocess_text(string,
+                            filter_long_numbers=True,
+                            filter_any_numbers=False,
+                            filter_at_sign=True,
+                            filter_special_chars=True,
+                            special_chars=None):
+            # Define los caracteres especiales por defecto
+            if special_chars is None:
+                special_chars = ['/', '(', ')', '#', '$', '%', '?', '+']
+
+            # Función para aplicar los filtros
+            def filter_text(text):
+                if filter_long_numbers:
+                    text = re.sub(r'\b\d{5,}\b', '', text)
+                if filter_any_numbers:
+                    text = re.sub(r'\d+', '', text)
+                if filter_at_sign:
+                    text = re.sub(r'@\w+', '', text)
+                if filter_special_chars:
+                    special_chars_regex = '[' + re.escape(''.join(special_chars)) + ']'
+                    text = re.sub(special_chars_regex, '', text)
+                return text
+
+            # Aplica la función de filtro a la columna especificada
+            string = filter_text(string)
+            return string
+
+        
+        def vectorize(text):
+            inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            outputs = self.model(**inputs)
+            return outputs.last_hidden_state.mean(dim=1).detach().numpy().squeeze().flatten()
+        
+        vectorized_data = vectorize(preprocess_text(string))
+
+        return vectorized_data
+         
+    
+    def BERT_vectorize_corpus(self):
+        df = pd.DataFrame({'corpus':self.corpus}) 
+        x = df['corpus'].apply(lambda x: self.BERT_vectorize(x))
+        vectorized_array = np.stack(x)
+        print(vectorized_array)
+        return vectorized_array
+
     
     def tsne_reduction(self):
+        
         tsne = TSNE(n_components=2, init = 'random',random_state=42)
         tsne_data = tsne.fit_transform(self.vectorized_corpus) 
         return tsne_data
@@ -145,19 +192,22 @@ class UserSpaceGenerator(UserVector):
         with open(self.save_path+'/kmeans_model.pkl', 'wb') as model_file:
             pickle.dump(self.kmeans_model, model_file)
         print('Exporting Kmeans clusters')
-
         self.data_with_clusters.to_csv(self.save_path+'/kmeans_clusters.csv', index=False)
 
     def export_vectorizer(self):
-        file_path = os.path.join(os.getcwd(), 'count_vectorizer_model.pkl')
+        file_path = os.path.join(os.getcwd(), 'model.pkl')
         print('Exporting vectorizer model')
         # Open the file for writing
         with open(file_path, 'wb') as model_file:
-            pickle.dump(self.vectorizer, model_file)
+            pickle.dump(self.model, model_file)
+            
+        file_path = os.path.join(os.getcwd(), 'tokenizer.pkl')
+        with open(file_path, 'wb') as model_file:
+            pickle.dump(self.tokenizer, model_file)
         print('Done')
          
 
     def export_vectorized_corpus(self):
         print('Exporting vectorized corpus')
-        self.vectorized_corpus = pd.DataFrame.sparse.from_spmatrix(self.vectorized_corpus)
+        self.vectorized_corpus = pd.DataFrame(self.vectorized_corpus)
         self.vectorized_corpus.to_csv(self.save_path+'/vectorized_corpus.csv', index = False)
