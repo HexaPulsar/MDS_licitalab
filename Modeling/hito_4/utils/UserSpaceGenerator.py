@@ -1,4 +1,4 @@
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer 
 from utils.UserVector import UserVector
 import pandas as pd
 from tqdm import tqdm
@@ -6,30 +6,31 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import pickle
 import os 
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering
 import seaborn as sns
 import numpy as np 
 import re
-from transformers import BertTokenizer, BertModel
-
+from transformers import BertTokenizer, BertModel 
 
 class UserSpaceGenerator(UserVector):
     def __init__(self, DF:pd.DataFrame, save_path:str = os.getcwd(), autoinitialize = True,autosave = True) -> None:
-        self.DF = DF
+         
         
+        self.DF = DF
+        self.genDF = DF[['taxnumberprovider','feature_vector','agilebuyingscode']]
         self.vectorizer = CountVectorizer()
         self.corpus,self.qualifying_users = self.generate_corpus()
         self.tokenizer = BertTokenizer.from_pretrained('dccuchile/bert-base-spanish-wwm-cased')
         self.model = BertModel.from_pretrained('dccuchile/bert-base-spanish-wwm-cased')
+        self.model = self.model.to('cuda')
         self.vectorized_corpus = self.BERT_vectorize_corpus()
-        print(self.vectorized_corpus.shape)
-        
+
         if autoinitialize:
-            self.tsne_data = self.tsne_reduction()
+            #self.tsne_data = self.tsne_reduction()
             #TODO permitir definir el numero de clusters desde la definicion de clase o desde yaml file
-            self.kmeans_model, self.data_with_clusters = self.launch_kmeans(30,
-                                                                            self.tsne_data,
-                                                                            plot=True)
+            self.kmeans_model, self.data_with_clusters = self.reduce_and_plot('reduce_clusterize')
+             
+        
         self.save_path = save_path
         if autosave:
             self.export_kmeans_model_and_data()
@@ -46,7 +47,7 @@ class UserSpaceGenerator(UserVector):
         Returns:
             _type_: _description_
         """
-        gb = self.DF.groupby(by =['taxnumberprovider']).agg({'agilebuyingscode':'nunique'})
+        gb = self.genDF.groupby(by =['taxnumberprovider']).agg({'agilebuyingscode':'nunique'})
         gb = gb.sort_values(by = 'agilebuyingscode')
         qualifying_users =  gb[gb['agilebuyingscode'] >= n_strings].index.values
         print(f'Se han removido {round((gb.shape[0] - qualifying_users.shape[0])/gb.shape[0] *100,2)}% de taxnumberproviders, por tener < {n_strings} licitaciones. \n El numero de usuarios para crear el corpus será {qualifying_users.shape[0]}.')
@@ -57,10 +58,96 @@ class UserSpaceGenerator(UserVector):
         if to_csv:
             pd.DataFrame(corpus).to_csv('')
         
-        return corpus,qualifying_users#{'corpus':corpus, 'qualifying_users':qualifying_users}
+        return corpus,qualifying_users
         
     
-    def BERT_vectorize(self,string):
+    
+    
+    def reduce_and_plot(self,method ='clusterize_reduce'):
+        if method == 'clusterize_reduce':
+            tsne = TSNE()
+            n_clusters = self.auto_elbow_method(n_clusters_range=np.linspace(5,15,10,dtype=int))
+            
+            clustering_method = KMeans(n_clusters= n_clusters,random_state=42)
+            cluster_labels = clustering_method.fit_predict(self.vectorized_corpus)
+            X_pca =tsne.fit_transform(self.vectorized_corpus)
+             
+            plt.figure(figsize=(8,8 ))
+            sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=cluster_labels, palette='hls',s = 20,markers='.',legend=False)
+            plt.title('PCA Scatter Plot with Clusters')
+
+            #plt.title('User Space Kmeans Clustering Results')
+            plt.xlabel('Dimension 1')
+            plt.ylabel('Dimension 2')
+             
+            plt.show()
+            data_with_clusters = pd.DataFrame({'taxnumberprovider':self.qualifying_users,
+                                           'feature_vector': self.corpus, 
+                                           'Cluster': cluster_labels})
+            return clustering_method, data_with_clusters
+        
+        elif method == 'reduce_clusterize':
+                     
+            tsne = TSNE()
+            n_clusters = self.auto_elbow_method(n_clusters_range=np.linspace(5,45,45,dtype=int))
+             
+            X_pca =tsne.fit_transform(self.vectorized_corpus)
+            clustering_method = KMeans(n_clusters= n_clusters)
+            cluster_assignments = clustering_method.fit_predict(X_pca)
+            
+             
+            plt.figure(figsize=(8,8 ))
+            sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=cluster_assignments, palette='hls',s = 20,markers='.',legend=False)
+            plt.title('PCA Scatter Plot with Clusters')
+
+            #plt.title('User Space Kmeans Clustering Results')
+            plt.xlabel('Dimension 1')
+            plt.ylabel('Dimension 2')
+             
+            plt.show()
+            data_with_clusters = pd.DataFrame({'taxnumberprovider':self.qualifying_users,
+                                           'feature_vector': self.corpus, 
+                                           'Cluster': cluster_assignments})
+            
+            return clustering_method, data_with_clusters
+        
+        elif method == 'both':
+            tsne = TSNE()
+            n_clusters = self.auto_elbow_method(n_clusters_range=np.linspace(5,45,30,dtype=int))
+            print(n_clusters)
+             
+            X_pca =tsne.fit_transform(self.vectorized_corpus)
+            clustering_method = KMeans(n_clusters= n_clusters)
+            cluster_assignments = clustering_method.fit_predict(X_pca)
+            
+             
+            plt.figure(figsize=(8,8 ))
+            sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=cluster_assignments, palette='hls',s = 20,markers='.',legend=False)
+            plt.title('PCA Scatter Plot with Clusters')
+
+            #plt.title('User Space Kmeans Clustering Results')
+            plt.xlabel('Dimension 1')
+            plt.ylabel('Dimension 2')
+            plt.show() 
+            
+            tsne = TSNE()
+            n_clusters = self.auto_elbow_method(n_clusters_range=np.linspace(5,45,45,dtype=int))
+              
+            clustering_method = KMeans(n_clusters= n_clusters)
+            cluster_labels = clustering_method.fit_predict(self.vectorized_corpus)
+            X_pca =tsne.fit_transform(self.vectorized_corpus)
+             
+            plt.figure(figsize=(8,8 ))
+            sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=cluster_labels, palette='hls',s = 20,markers='.',legend=False)
+            plt.title('PCA Scatter Plot with Clusters')
+
+            #plt.title('User Space Kmeans Clustering Results')
+            plt.xlabel('Dimension 1')
+            plt.ylabel('Dimension 2')
+             
+            plt.show()
+            
+    def BERT_vectorize(self, string):
         def preprocess_text(string,
                             filter_long_numbers=True,
                             filter_any_numbers=False,
@@ -88,104 +175,53 @@ class UserSpaceGenerator(UserVector):
             string = filter_text(string)
             return string
 
-        
         def vectorize(text):
             inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            inputs = {key: value.to(self.device) for key, value in inputs.items()}
             outputs = self.model(**inputs)
-            return outputs.last_hidden_state.mean(dim=1).detach().numpy().squeeze().flatten()
-        
+            return outputs.last_hidden_state.mean(dim=1).detach().cpu().numpy().squeeze().flatten()
+
         vectorized_data = vectorize(preprocess_text(string))
 
         return vectorized_data
-         
     
     def BERT_vectorize_corpus(self):
-        df = pd.DataFrame({'corpus':self.corpus}) 
-        x = df['corpus'].apply(lambda x: self.BERT_vectorize(x))
-        vectorized_array = np.stack(x)
-        print(vectorized_array)
-        return vectorized_array
-
+            df = pd.DataFrame({'corpus': self.corpus})
+            vectorized_array = []
+            
+            for text in tqdm(df['corpus'], desc='BERT Vectorization Progress', unit='texts'):
+                vectorized_data = self.BERT_vectorize(text)
+                vectorized_array.append(vectorized_data)
+            
+            vectorized_array = np.stack(vectorized_array)
+            #print(vectorized_array)
+            return vectorized_array
     
-    def tsne_reduction(self):
+    def auto_elbow_method(self,n_clusters_range,_n_init = 5, plot_elbow = True):
         
-        tsne = TSNE(n_components=2, init = 'random',random_state=42)
-        tsne_data = tsne.fit_transform(self.vectorized_corpus) 
-        return tsne_data
-
-    def auto_elbow_method(data,n_clusters_range:np.linspace,_n_init = 5, _random_state = 42, plot = False):
-        """auto elbow method for kmeans
-
-        Args:
-            data (_type_): data to clusterize
-            n_clusters_range (np.linspace): range of n_clusters for elbow method
-            _n_init (int, optional): number of kmeans init. Defaults to 5.
-            _random_state (int, optional): for replicability. Defaults to 42.
-            plot (bool, optional): plots elbow method. Defaults to False.
-
-        Returns:
-            _n_clusters_ (int): returns number of clusters for kmeans 
-        """
         # Range of cluster numbers to try
         # Initialize an empty list to store the variance explained by each cluster
         inertia = []
 
         # Perform K-Means clustering for different values of k
         for n_clusters in tqdm(n_clusters_range,desc='testing clusters in elbow method'):
-            kmeans = KMeans(n_clusters=n_clusters,n_init=_n_init,random_state=_random_state)
-            kmeans.fit(data)
+            kmeans = KMeans(n_clusters=n_clusters,n_init=_n_init)
+            kmeans.fit(self.vectorized_corpus)
             inertia.append(kmeans.inertia_)
 
-        if plot:
+        if plot_elbow:
             # Create the Elbow Method graph
-            plt.figure(figsize=(20, 8))
+            plt.figure()
             plt.plot(n_clusters_range, inertia, marker='o')
             plt.title('Elbow Method for Optimal K')
             plt.xlabel('Number of Clusters (K)')
             plt.ylabel('Variance Explained (Inertia)')
             plt.grid(True)
             plt.show()
-
         variation = [(inertia[i] - inertia[i+1])/ inertia[i] * 100 for i in range(len(inertia)-1)]
         n_clusters = n_clusters_range[variation.index(max(variation)) + 1]
-        print(f"El número óptimo de clusters es {n_clusters}")
-
+        print(f"Optimal n_clusters is {int(n_clusters)}")
         return n_clusters
-
-    def launch_kmeans(self,n_clusters:int,data, plot:bool = False):
-        """Launches Kmeans
-
-        Args:
-            n_clusters (int): number of clusters
-            data (_type_): data to clusterize
-            corpus (_type_): original corpus
-            plot (bool, optional): plot kmeans. Defaults to False.
-
-        Returns:
-            kmeans (Kmeans): Kmeans model
-            data_with_clusters (DataFrame): dataframe of corpus with asociated cluster
-        """
-        # Apply K-Means clustering
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        cluster_assignments = kmeans.fit_predict(data)
-        #cluster_assignments
-        # Create a scatter plot with different colors for each cluster
-
-        if plot:
-            plt.figure(figsize=(8,8 ))
-            sns.scatterplot(x=data[:, 0], y=data[:, 1], hue=cluster_assignments, s=70,marker = '.',palette='hls', legend=False)
-            plt.title('User Space Kmeans Clustering Results')
-            plt.xlabel('Dimension 1')
-            plt.ylabel('Dimension 2')
-            
-            plt.show()
-            #plt.savefig('kmeans_plot.png')
-        #print(corpus.shape,cluster_assignments.shape)
-        # Create a DataFrame to associate original strings with clusters
-        data_with_clusters = pd.DataFrame({'taxnumberprovider':self.qualifying_users,
-                                           'feature_vector': self.corpus, 
-                                           'Cluster': cluster_assignments})
-        return kmeans,data_with_clusters
     
     def export_kmeans_model_and_data(self):
         print('Exporting Kmeans model')

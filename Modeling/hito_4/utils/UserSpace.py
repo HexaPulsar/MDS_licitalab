@@ -8,7 +8,7 @@ from utils.UserSpaceGenerator import UserSpaceGenerator
 class UserSpace(UserSpaceGenerator):
     def __init__(self,DF, save_path) -> None:
         self.files_in_directory = os.listdir(save_path)
-        print(self.files_in_directory)
+        #print(self.files_in_directory)
         self.check_files = ['kmeans_clusters.csv',
                             'kmeans_model.pkl',
                             'model.pkl',

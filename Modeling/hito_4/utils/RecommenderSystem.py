@@ -7,6 +7,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch 
 
 
 
@@ -15,10 +16,21 @@ class RecommenderSystem(UserSpace):
     def __init__(self, DF:pd.DataFrame, save_path:str = os.getcwd(), autoinitialize = True,autosave = True) -> None:
         print("Initializing Recommender System")
         print(f"The current directory is {os.getcwd()}")
+        if torch.cuda.is_available():
+            # Set the GPU device (assuming you have at least one GPU)
+            gpu_device = 0  # You can change this to the index of the GPU you want to use
+            torch.cuda.set_device(gpu_device)
+            self.device = torch.device("cuda")
+            print(f"Using GPU: {torch.cuda.get_device_name(gpu_device)}")
+        else:
+            # If no GPU is available, use the CPU
+            self.device = torch.device("cpu")
+            print("No GPU available, using CPU")
         self.df = DF
         #TODO agregar log file que guarde metadata
 
         super().__init__(DF,save_path=save_path)
+        
     def predict(self, taxnumberprovider:str):
         """Predict items (recommend items) to a user based on its taxnumberprovider
 
@@ -27,10 +39,10 @@ class RecommenderSystem(UserSpace):
         """
         user_vector = UserVector(taxnumberprovider,self.df)
         user_vectorized = self.BERT_vectorize(' '.join(user_vector.strings))
-        print(self.vectorized_corpus.shape,user_vectorized.shape)
+        #print(self.vectorized_corpus.shape,user_vectorized.shape)
         distances = euclidean_distances(user_vectorized.reshape(1, -1), self.vectorized_corpus)
         nearest_core_point_cluster = self.data_with_clusters['Cluster'][distances.argmin()]
-        print(f"Unseen data point belongs to cluster {nearest_core_point_cluster}")
+        print(f"({taxnumberprovider}) data point belongs to cluster {nearest_core_point_cluster}")
          
         def get_cluster_data(cluster, cluster_method):
             cluster_data = cluster_method[cluster_method['Cluster'] == cluster]
