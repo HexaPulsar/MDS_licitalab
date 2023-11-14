@@ -1,7 +1,9 @@
 import pandas as pd
 
 class UserVector:
-    def __init__(self,taxnumberprovider:str, df:pd.DataFrame,length:int = 10) -> None:
+    def __init__(self,taxnumberprovider:str, 
+                 df:pd.DataFrame,
+                 length:int = 10) -> None:
          
         #TODO add randomizer if > 10 descriptions
         self.strings = df.query(f"taxnumberprovider == '{str(taxnumberprovider)}'")['feature_vector'].unique()[:length]
