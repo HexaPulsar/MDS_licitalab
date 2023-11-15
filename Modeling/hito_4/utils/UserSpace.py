@@ -19,25 +19,24 @@ class UserSpace(UserSpaceGenerator):
         
         
         
-        if initialize_from != '': 
-            self.save_directory = initialize_from          
-            try:
-                # Attempt to create the directory
-                os.makedirs(self.save_directory, exist_ok=True)
-                print(f"Directory '{self.save_directory}' created or already exists.")
-            except Exception as e:
-                print(f"Error creating directory: {e}")
-            self.files_in_directory = os.listdir(self.save_directory)
-            print(self.files_in_directory)
-            self.check_files = ['BERT_model.pkl', 'BERT_tokenizer.pkl', 'clustering_model.pkl', 'clusters.csv', 'corpus.csv', 'vectorized_corpus.csv']
-            is_subset = set(self.check_files).issubset(self.files_in_directory)
             
-            if not is_subset:
-                print("Models and Dataframes not found, initializing a Recommender System from zero.")
-                super().__init__(self.train,self.test,save_path=save_path)
-            else:
-                print('All necesary files have been found.') 
+        try:
+            # Attempt to create the directory
+            os.makedirs(self.save_directory, exist_ok=True)
+            print(f"Directory '{self.save_directory}' created or already exists.")
+        except Exception as e:
+            print(f"Error creating directory: {e}")
+        self.files_in_directory = os.listdir(self.save_directory)
+        print(self.files_in_directory)
+        self.check_files = ['BERT_model.pkl', 'BERT_tokenizer.pkl', 'clustering_model.pkl', 'clusters.csv', 'corpus.csv', 'vectorized_corpus.csv']
+        is_subset = set(self.check_files).issubset(self.files_in_directory)
         
+        if not is_subset:
+            print("Models and Dataframes not found, initializing a Recommender System from zero.")
+            super().__init__(self.train,self.test,save_path=save_path)
+        else:
+            print('All necesary files have been found.') 
+    
         try:
             with open(os.path.join(self.save_directory, "clustering_model.pkl"), "rb") as file:
                 self.cluster_model = pickle.load(file)

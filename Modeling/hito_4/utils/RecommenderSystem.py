@@ -39,13 +39,11 @@ class RecommenderSystem(UserSpace):
         
         #TODO agregar log file que guarde metadata
         self.save_path = save_path
-        if initialize_from !='':
-            super().__init__(train,test,save_path=save_path, initialize_from=initialize_from)
-            
-        else:
-            super().__init__(train,test,userspace_data_path,save_path=save_path)
-            #for key, value in vars(self).items():
-            #    print(f"{key}: {value}")
+ 
+    
+        super().__init__(train,test,save_path=save_path)
+        #for key, value in vars(self).items():
+        #    print(f"{key}: {value}")
         self.intersection  = np.intersect1d(self.find_qualifying_users(train), self.find_qualifying_users(test))
         
     def describe(self):
