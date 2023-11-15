@@ -18,40 +18,57 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 class UserSpaceGenerator(UserVector):
     def __init__(self, 
                  train:pd.DataFrame, 
-                 test:pd.DataFrame, 
-                 save_path:str = os.getcwd(), 
-                 #clustering_method
-                 autoinitialize = True,
-                 autosave = True) -> None:
+                 test:pd.DataFrame,
+                 save_path:str = os.getcwd(),
+                 clustering_model = KMeans,
+                 n_strings:int = 10,
+                 **kwargs 
+                 ) -> None:
+        
         try:
             # Attempt to create the directory
             os.makedirs(self.model_save_directory, exist_ok=True)
             print(f"Directory '{self.model_save_directory}' created or already exists.")
         except Exception as e:
             print(f"Error creating directory: {e}")
+            
         print("Generating User Space")
-        self.train = train
-        self.gentrain = train[['taxnumberprovider','feature_vector','agilebuyingscode']]
-        self.vectorizer = CountVectorizer()
-        self.corpus,self.qualifying_users = self.generate_corpus()
+        self.train = train  
+        
+        self.save_directory = f"{save_path}/userspace_data"
+        self.qualifying_users = self.find_qualifying_users(self.train)
+        self.corpus = self.generate_corpus()
+        
         self.tokenizer = BertTokenizer.from_pretrained('dccuchile/bert-base-spanish-wwm-cased')
         self.model = BertModel.from_pretrained('dccuchile/bert-base-spanish-wwm-cased')
         self.model = self.model.to('cuda')
+        
         self.vectorized_corpus = self.BERT_vectorize_corpus()
-        self.save_directory = f"{save_path}/userspace_data"
         
-        if autoinitialize:
-            #TODO permitir definir el numero de clusters desde la definicion de clase o desde yaml file
-            self.kmeans_model, self.data_with_clusters = self.reduce_and_plot('reduce_clusterize')
-             
         
-        self.save_path = save_path
-        if autosave:
-            self.export_kmeans_model_and_data()
-            self.export_vectorizer()
-            self.export_vectorized_corpus() 
+        self.cluster_model = clustering_model(**kwargs)
         
-    def generate_corpus(self, n_strings:int = 10, to_csv:bool = False):
+        
+        #TODO permitir definir el numero de clusters desde la definicion de clase o desde yaml file
+        self.data_with_clusters = self.reduce_and_plot()
+            
+    
+        self.export_cluster_model_and_data()
+        self.export_vectorizer()
+        self.export_vectorized_corpus() 
+        self.export_corpus()
+    
+    
+    def find_qualifying_users(self,df):
+        gentrain = df[['taxnumberprovider','feature_vector','agilebuyingscode']]
+        n_strings = 10
+        gb = gentrain.groupby(by =['taxnumberprovider']).agg({'agilebuyingscode':'nunique'})
+        gb = gb.sort_values(by = 'agilebuyingscode')
+        qualifying_users =  gb[gb['agilebuyingscode'] >=  n_strings].index.values
+        print(f'Se han removido {round((gb.shape[0] - qualifying_users.shape[0])/gb.shape[0] *100,2)}% de taxnumberproviders, por tener < {n_strings} licitaciones. \n El numero de usuarios para crear el corpus será {qualifying_users.shape[0]}.')
+        return qualifying_users
+    
+    def generate_corpus(self):
         """generates list of UserVector objects from a list of <n_string> taxnumberprovider. 
             
         Args:
@@ -61,111 +78,59 @@ class UserSpaceGenerator(UserVector):
         Returns:
             _type_: _description_
         """
-        gb = self.gentrain.groupby(by =['taxnumberprovider']).agg({'agilebuyingscode':'nunique'})
-        gb = gb.sort_values(by = 'agilebuyingscode')
-        qualifying_users =  gb[gb['agilebuyingscode'] >= n_strings].index.values
-        print(f'Se han removido {round((gb.shape[0] - qualifying_users.shape[0])/gb.shape[0] *100,2)}% de taxnumberproviders, por tener < {n_strings} licitaciones. \n El numero de usuarios para crear el corpus será {qualifying_users.shape[0]}.')
-         
-        corpus = [' '.join(UserVector(i,self.train).strings) for i in tqdm(qualifying_users, desc = 'Selecting strings from each user')]
-         
-        #TODO fix path for save
-        if to_csv:
-            pd.DataFrame(corpus).to_csv('')
         
-        return corpus,qualifying_users
+        corpus = [' '.join(UserVector(i,self.train).strings) for i in tqdm(self.qualifying_users, desc = 'Selecting strings from each user')]
+        return corpus 
         
-    def reduce_and_plot(self, method='clusterize_reduce'):
-        if method == 'clusterize_reduce':
-            n_clusters = self.auto_elbow_method(n_clusters_range=np.linspace(15, 45, 30, dtype=int))
-
-            # Apply Agglomerative Clustering
-            agg = AgglomerativeClustering(n_clusters=n_clusters)
-            agg_labels = agg.fit_predict(self.vectorized_corpus)
-
-            # Apply KMeans clustering
-            clustering_method = KMeans(n_clusters=n_clusters, random_state=42)
-            kmeans_labels = clustering_method.fit_predict(self.vectorized_corpus)
-
-            # Evaluate clustering using silhouette score
-            print("\nSilhouette Scores:")
-            print("KMeans:", silhouette_score(self.vectorized_corpus, kmeans_labels))
-            print("Agglomerative Clustering:", silhouette_score(self.vectorized_corpus, agg_labels))
-
-            tsne = TSNE(n_components=3)
-            X_pca = tsne.fit_transform(self.vectorized_corpus)
-
-            fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
-
-            # Visualize KMeans clusters
-            axes[0].scatter(X_pca[:, 0], X_pca[:, 1], c=kmeans_labels, cmap='plasma', marker='.', s=20)
-            axes[0].set_title('KMeans Clustering')
-
-            # Visualize Agglomerative Clustering clusters
-            axes[1].scatter(X_pca[:, 0], X_pca[:, 1], c=agg_labels, cmap='plasma', marker='.', s=20)
-            axes[1].set_title('Agglomerative Clustering')
-            
-            plt.show()
-            
-            fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 10))
-            
-            axes[0].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=kmeans_labels, cmap='plasma')
-            axes[0].set_title('KMeans Clustering')
-
-            # Visualize Agglomerative Clustering clusters in 3D
-            axes[1].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=agg_labels, cmap='plasma')
-            axes[1].set_title('Agglomerative Clustering')
-            plt.show()
-            
-            data_with_clusters = pd.DataFrame({'taxnumberprovider': self.qualifying_users,
-                                               'feature_vector': self.corpus,
-                                               'Cluster': kmeans_labels})
-            return clustering_method, data_with_clusters
-            
-        elif method =='reduce_clusterize':
-            
-            n_clusters = self.auto_elbow_method(n_clusters_range=np.linspace(15, 45, 30, dtype=int))
-            tsne = TSNE(n_components=3)
-            X_pca = tsne.fit_transform(self.vectorized_corpus)
-            # Apply Agglomerative Clustering
-            agg = AgglomerativeClustering(n_clusters=n_clusters)
-            agg_labels = agg.fit_predict(X_pca)
-
-            # Apply KMeans clustering
-            clustering_method = KMeans(n_clusters=n_clusters, random_state=42)
-            kmeans_labels = clustering_method.fit_predict(X_pca)
-
-            # Evaluate clustering using silhouette score
-            print("\nSilhouette Scores:")
-            print("KMeans:", silhouette_score(X_pca, kmeans_labels))
-            print("Agglomerative Clustering:", silhouette_score(X_pca, agg_labels))
-
+    def reduce_and_plot(self, elbow_range:np.linspace = np.linspace(15, 45, 30, dtype=int)):
+        figsize = (10,6)
+        n_clusters = self.auto_elbow_method(n_clusters_range=elbow_range)
+        tsne = TSNE(n_components=3)
+        X_pca = tsne.fit_transform(self.vectorized_corpus)
         
-            fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 10))
-
-            # Visualize KMeans clusters
-            axes[0].scatter(X_pca[:, 0], X_pca[:, 1], c=kmeans_labels, cmap='plasma', marker='.')#, s=70)
-            axes[0].set_title('KMeans Clustering')
-
-            # Visualize Agglomerative Clustering clusters
-            axes[1].scatter(X_pca[:, 0], X_pca[:, 1], c=agg_labels, cmap='plasma', marker='.')#, s=70)
-            axes[1].set_title('Agglomerative Clustering')
+        # Apply Agglomerative Clustering
+        agg = AgglomerativeClustering(n_clusters=n_clusters)
+        agg_labels = agg.fit_predict(X_pca)
+        
+        # Apply KMeans clustering
+        
+        self.cluster_model.set_params(n_clusters= n_clusters)
+        print(self.cluster_model)
+        clustering_labels = self.cluster_model.fit_predict(X_pca)
+        
+        
+        print(f"Used {self.cluster_model} to clusterize.")
+        # Evaluate clustering using silhouette score
+        print("\nSilhouette Scores:")
+        print("KMeans:", silhouette_score(X_pca, clustering_labels))
+        print("Agglomerative Clustering:", silhouette_score(X_pca, agg_labels))
             
-            plt.show()
- 
-            fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 10))
-            
-            axes[0].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=kmeans_labels, cmap='plasma')
-            axes[0].set_title('KMeans Clustering')
+        fig, axes = plt.subplots(nrows=1, ncols=2,figsize = figsize)
 
-            # Visualize Agglomerative Clustering clusters in 3D
-            axes[1].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=agg_labels, cmap='plasma')
-            axes[1].set_title('Agglomerative Clustering')
-            plt.show()
-            
-            data_with_clusters = pd.DataFrame({'taxnumberprovider': self.qualifying_users,
-                                               'feature_vector': self.corpus,
-                                               'Cluster': kmeans_labels})
-            return clustering_method, data_with_clusters
+        # Visualize KMeans clusters
+        axes[0].scatter(X_pca[:, 0], X_pca[:, 1], c=clustering_labels, cmap='plasma', marker='.')#, s=70)
+        axes[0].set_title('KMeans Clustering')
+
+        # Visualize Agglomerative Clustering clusters
+        axes[1].scatter(X_pca[:, 0], X_pca[:, 1], c=agg_labels, cmap='plasma', marker='.')#, s=70)
+        axes[1].set_title('Agglomerative Clustering')
+        
+        plt.show()
+
+        fig, axes = plt.subplots(nrows=1, ncols=2,figsize = figsize)
+        
+        axes[0].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=clustering_labels, cmap='plasma')
+        axes[0].set_title('KMeans Clustering')
+
+        # Visualize Agglomerative Clustering clusters in 3D
+        axes[1].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=agg_labels, cmap='plasma')
+        axes[1].set_title('Agglomerative Clustering')
+        plt.show() 
+        data_with_clusters = pd.DataFrame({'taxnumberprovider': self.qualifying_users,
+                                            'feature_vector': self.corpus.squeeze() if isinstance(self.corpus,pd.DataFrame) else self.corpus,
+                                            'Cluster': clustering_labels})
+        
+        return data_with_clusters
     
     def BERT_vectorize(self, string):
         def preprocess_text(string,
@@ -224,7 +189,7 @@ class UserSpaceGenerator(UserVector):
         inertia = []
 
         # Perform K-Means clustering for different values of k
-        for n_clusters in tqdm(n_clusters_range,desc='testing clusters in elbow method'):
+        for n_clusters in tqdm(n_clusters_range,desc='testing clusters in elbow method',unit= 'user'):
             kmeans = KMeans(n_clusters=n_clusters,n_init=_n_init)
             kmeans.fit(self.vectorized_corpus)
             inertia.append(kmeans.inertia_)
@@ -243,12 +208,12 @@ class UserSpaceGenerator(UserVector):
         print(f"Optimal n_clusters is {int(n_clusters)}")
         return n_clusters
     
-    def export_kmeans_model_and_data(self):
-        print('Exporting Kmeans model')
-        with open(self.save_directory+'/kmeans_model.pkl', 'wb') as model_file:
-            pickle.dump(self.kmeans_model, model_file)
-        print('Exporting Kmeans clusters')
-        self.data_with_clusters.to_csv(self.save_directory+'/kmeans_clusters.csv', index=False)
+    def export_cluster_model_and_data(self):
+        print('Exporting cluster model')
+        with open(self.save_directory+'/clustering_model.pkl', 'wb') as model_file:
+            pickle.dump(self.cluster_model, model_file)
+        print('Exporting clusters')
+        self.data_with_clusters.to_csv(self.save_directory+'/clusters.csv', index=False)
 
     def export_vectorizer(self):
          
@@ -261,7 +226,12 @@ class UserSpaceGenerator(UserVector):
         with open(self.save_directory+'/BERT_tokenizer.pkl', 'wb') as model_file:
             pickle.dump(self.tokenizer, model_file)
         print('Done')
-
+    
+    def export_corpus(self):
+        print('Exporting vectorized corpus')
+        self.corpus = pd.DataFrame(self.corpus)
+        self.corpus.to_csv(self.save_directory+'/corpus.csv', index = False)
+        
     def export_vectorized_corpus(self):
         print('Exporting vectorized corpus')
         self.vectorized_corpus = pd.DataFrame(self.vectorized_corpus)

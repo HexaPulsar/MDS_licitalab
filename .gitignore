@@ -10157,3 +10157,14 @@ marzo.csv
 .gitignore
 datasetmanage.ipynb
 mayo.csv
+Modeling/hito_4/SAVEuserspace_data copy/BERT_model.pkl
+Modeling/hito_4/SAVEuserspace_data copy/BERT_tokenizer.pkl
+Modeling/hito_4/SAVEuserspace_data copy/kmeans_clusters.csv
+Modeling/hito_4/SAVEuserspace_data copy/kmeans_model.pkl
+Modeling/hito_4/SAVEuserspace_data copy/vectorized_corpus.csv
+Modeling/hito_4/eval_userspace_data/BERT_model.pkl
+Modeling/hito_4/eval_userspace_data/BERT_tokenizer.pkl
+Modeling/hito_4/eval_userspace_data/clustering_model.pkl
+Modeling/hito_4/eval_userspace_data/clusters.csv
+Modeling/hito_4/eval_userspace_data/corpus.csv
+Modeling/hito_4/eval_userspace_data/vectorized_corpus.csv
