@@ -1,16 +1,7 @@
 
+Esta rama incluye los siguientes cambios al modelo
 
-1. `CountVec.ipynb` es el modelamiento experimental de los feature vectors con los que se generan las recomendaciones. En este notebook se estudia las distribuciones de los vectores en el espacio y si se forman clusters.
-2. `experimental_dash.py` lanza un dashboard para explorar las recomendaciones hechas por un cliente.
-3. `modeling_utils.py` es un script auxiliar donde se encuentran definidas funciones de utilidad para el funcionamiento del sistema de recomendaciones.
-4. `generate_corpus.py` podria usarse en el futuro para generar un corpus permanente del cual crear recomendaciones.
-
-
-
-
-## Hito 4
-
-- Usamos todo el dataset (antes 500000 filas).
-- Modelo con OOP 
-- Espacio congruente (user vector space y user consult vector)
-
+1. vectorizacion por BERT
+2. autogeneración del espacio de usuario y autoinicializacion del generador del espacio si es necesario
+3. `clustering.ipynb` permite estudiar los metodos de clusterización sobre la data
+4. `ShowcaseSystem.ipynb` muestra las funcionalidades del modelo.
