@@ -10168,3 +10168,9 @@ Modeling/hito_4/eval_userspace_data/clustering_model.pkl
 Modeling/hito_4/eval_userspace_data/clusters.csv
 Modeling/hito_4/eval_userspace_data/corpus.csv
 Modeling/hito_4/eval_userspace_data/vectorized_corpus.csv
+userspace_data/BERT_model.pkl
+userspace_data/BERT_tokenizer.pkl
+userspace_data/clustering_model.pkl
+userspace_data/clusters.csv
+userspace_data/corpus.csv
+userspace_data/vectorized_corpus.csv
