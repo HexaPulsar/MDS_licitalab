@@ -1,0 +1,5 @@
+
+DEBUG: True
+
+TRAIN = 'C:\\Users\\magda\\OneDrive\\Escritorio\\MDS_licitalab\\marzo.csv'
+TEST =  'C:\\Users\\magda\\OneDrive\\Escritorio\\MDS_licitalab\\abril.csv'

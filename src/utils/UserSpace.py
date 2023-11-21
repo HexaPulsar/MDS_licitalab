@@ -3,7 +3,7 @@ import os
 import shutil
 import numpy as np
 import pandas as pd 
-from utils.UserSpaceGenerator import UserSpaceGenerator
+from .UserSpaceGenerator import UserSpaceGenerator
 
 class UserSpace(UserSpaceGenerator):
     def __init__(self,

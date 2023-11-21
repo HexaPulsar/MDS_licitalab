@@ -1,7 +1,7 @@
 from collections import defaultdict
 import io
-from utils.UserVector import UserVector
-from utils.UserSpace import UserSpace
+from .UserVector import UserVector
+from .UserSpace import UserSpace
 from sklearn.metrics.pairwise import euclidean_distances
 import os 
 import pandas as pd 
