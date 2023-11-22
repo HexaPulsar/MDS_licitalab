@@ -10,7 +10,7 @@ class UserSpace(UserSpaceGenerator):
                  train:pd.DataFrame,
                  test:pd.DataFrame, 
                  save_path:str = os.getcwd(), 
-                 initialize_from = '') -> None:
+                 elbow_range: np.linspace =  np.linspace(200,250,45,dtype = int)) -> None:
         
         print("Initializing User Space")
         self.save_directory = os.path.join(save_path, 'userspace_data')
@@ -33,7 +33,7 @@ class UserSpace(UserSpaceGenerator):
         
         if not is_subset:
             print("Models and Dataframes not found, initializing a Recommender System from zero.")
-            super().__init__(self.train,self.test,save_path=save_path)
+            super().__init__(self.train,self.test,elbow_range= elbow_range,save_path=save_path)
         else:
             print('All necesary files have been found.') 
     

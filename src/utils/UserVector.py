@@ -1,18 +1,12 @@
 import pandas as pd
-
+import numpy as np
 class UserVector:
     def __init__(self,taxnumberprovider:str, 
                  df:pd.DataFrame,
                  length:int = 10) -> None:
-         
-        #TODO add randomizer if > 10 descriptions
-        self.strings = df.query(f"taxnumberprovider == '{str(taxnumberprovider)}'")['feature_vector'].unique()[:length]
+          
+        df = df.query(f"taxnumberprovider == '{str(taxnumberprovider)}'")['feature_vector'].unique()
+        self.strings =np.random.choice(df , size=length, replace=False) 
         self.strings = [ i.replace("\n",' ') for i in self.strings]
-         
-        #TODO revisar que el df no sea nulo
-        #if self.df == None:
-        #    print('This user has no AgileBuys.')
-         
-        #print(self.strings)
-        #TODO crear una funcion que describa al usuario
+    
         

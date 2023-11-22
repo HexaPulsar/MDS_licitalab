@@ -18,7 +18,7 @@ class RecommenderSystem(UserSpace):
                  test: pd.DataFrame,
                  userspace_data_path:str = None,
                  save_path:str = os.getcwd(),
-                 initialize_from:str = '') -> None:
+                 elbow_range:np.linspace =  np.linspace(200,250,45,dtype = int)) -> None:
         
         self.train = train
         self.test = test
@@ -36,12 +36,11 @@ class RecommenderSystem(UserSpace):
             # If no GPU is available, use the CPU
             self.device = torch.device("cpu")
             print("No GPU available, using CPU")
-        
-        #TODO agregar log file que guarde metadata
+         
         self.save_path = save_path
  
     
-        super().__init__(train,test,save_path=save_path)
+        super().__init__(train,test,elbow_range= elbow_range,save_path=save_path)
         #for key, value in vars(self).items():
         #    print(f"{key}: {value}")
         self.intersection  = np.intersect1d(self.find_qualifying_users(train), self.find_qualifying_users(test))
@@ -121,12 +120,16 @@ class RecommenderSystem(UserSpace):
         
         def evaluar_ruts(dict_participaciones_proovedores,limit_participations:int = 10):
             # Obtener los índices de las filas que cumplen la condición
-            dict_participaciones = participaciones_rut()
-            lista_ruts_participaron = list(dict_participaciones.keys())
+            #dict_participaciones = participaciones_rut()
+            lista_ruts_participaron = list(dict_participaciones_proovedores.keys())
             
             # Iteramos para todos los ruts y lo vamos llenando en una tabla  | rut_proveedor | Cantidad_de_participaciones_reales_del_usuario
             #  | Cantidad_de_sugerencias_del_cluster | similitudes | cantidad_de_similitudes | Cluster
-            columnas = ["rut_proveedor", "Cantidad_de_participaciones_reales_del_usuario", "Cantidad_de_sugerencias_del_cluster","similitudes", "cantidad_de_similitudes", "Cluster"]
+            columnas = ["rut_proveedor", 
+                        "Cantidad_de_participaciones_reales_del_usuario", 
+                        "Cantidad_de_sugerencias_del_cluster",
+                        "similitudes", "cantidad_de_similitudes",
+                        "Cluster"]
             #Metricas_por_usuario = pd.DataFrame()
             Metricas_por_usuario = pd.DataFrame(columns=columnas)
 
@@ -144,7 +147,7 @@ class RecommenderSystem(UserSpace):
 
                 # Encuentra la intersección de las dos listas
                 similitudes = set(diccionario_participaciones_proovedores[participante]) & set(indices_filtrados)
-
+                
                 # Crear un diccionario con los datos de la fila
                 nueva_fila = pd.DataFrame({
                                             "rut_proveedor": [participante],

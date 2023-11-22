@@ -22,6 +22,7 @@ class UserSpaceGenerator(UserVector):
                  save_path:str = os.getcwd(),
                  clustering_model = AgglomerativeClustering,
                  n_strings:int = 10,
+                 elbow_range: np.linspace =  np.linspace(200,250,45,dtype = int),
                  **kwargs 
                  ) -> None:
         
@@ -34,7 +35,7 @@ class UserSpaceGenerator(UserVector):
             
         print("Generating User Space")
         self.train = train  
-        
+        self.elbow_range = elbow_range
         self.save_directory = f"{save_path}/userspace_data"
         self.qualifying_users = self.find_qualifying_users(self.train)
         self.corpus = self.generate_corpus()
@@ -81,9 +82,9 @@ class UserSpaceGenerator(UserVector):
         corpus = [' '.join(UserVector(i,self.train).strings) for i in tqdm(self.qualifying_users, desc = 'Selecting strings from each user')]
         return corpus 
         
-    def reduce_and_plot(self, elbow_range:np.linspace = np.linspace(15, 45, 30, dtype=int)):
+    def reduce_and_plot(self):
         figsize = (15,5)
-        n_clusters = self.auto_elbow_method(n_clusters_range=elbow_range)
+        n_clusters = self.auto_elbow_method(n_clusters_range=self.elbow_range)
         tsne = TSNE(n_components=3)
         X_pca = tsne.fit_transform(self.vectorized_corpus)
         
