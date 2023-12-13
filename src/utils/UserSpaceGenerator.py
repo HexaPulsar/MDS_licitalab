@@ -1,6 +1,6 @@
  
 from sklearn.feature_extraction.text import CountVectorizer 
-from utils.UserVector import UserVector
+from .UserVector import UserVector
 import pandas as pd
 from tqdm import tqdm
 from sklearn.manifold import TSNE
@@ -20,8 +20,9 @@ class UserSpaceGenerator(UserVector):
                  train:pd.DataFrame, 
                  test:pd.DataFrame,
                  save_path:str = os.getcwd(),
-                 clustering_model = KMeans,
+                 clustering_model = AgglomerativeClustering,
                  n_strings:int = 10,
+                 elbow_range: np.linspace =  np.linspace(200,250,45,dtype = int),
                  **kwargs 
                  ) -> None:
         
@@ -34,7 +35,7 @@ class UserSpaceGenerator(UserVector):
             
         print("Generating User Space")
         self.train = train  
-        
+        self.elbow_range = elbow_range
         self.save_directory = f"{save_path}/userspace_data"
         self.qualifying_users = self.find_qualifying_users(self.train)
         self.corpus = self.generate_corpus()
@@ -52,7 +53,6 @@ class UserSpaceGenerator(UserVector):
         #TODO permitir definir el numero de clusters desde la definicion de clase o desde yaml file
         self.data_with_clusters = self.reduce_and_plot()
             
-    
         self.export_cluster_model_and_data()
         self.export_vectorizer()
         self.export_vectorized_corpus() 
@@ -82,53 +82,43 @@ class UserSpaceGenerator(UserVector):
         corpus = [' '.join(UserVector(i,self.train).strings) for i in tqdm(self.qualifying_users, desc = 'Selecting strings from each user')]
         return corpus 
         
-    def reduce_and_plot(self, elbow_range:np.linspace = np.linspace(15, 45, 30, dtype=int)):
-        figsize = (10,6)
-        n_clusters = self.auto_elbow_method(n_clusters_range=elbow_range)
+    def reduce_and_plot(self):
+        figsize = (15,5)
+        n_clusters = self.auto_elbow_method(n_clusters_range=self.elbow_range)
         tsne = TSNE(n_components=3)
         X_pca = tsne.fit_transform(self.vectorized_corpus)
         
-        # Apply Agglomerative Clustering
+        # Apply Agglomerative Clustering       
         agg = AgglomerativeClustering(n_clusters=n_clusters)
         agg_labels = agg.fit_predict(X_pca)
         
         # Apply KMeans clustering
         
-        self.cluster_model.set_params(n_clusters= n_clusters)
-        print(self.cluster_model)
-        clustering_labels = self.cluster_model.fit_predict(X_pca)
+        #self.cluster_model.set_params(n_clusters= n_clusters)
+        #print(self.cluster_model)
+        #clustering_labels = self.cluster_model.fit_predict(X_pca)
         
         
         print(f"Used {self.cluster_model} to clusterize.")
         # Evaluate clustering using silhouette score
         print("\nSilhouette Scores:")
-        print("KMeans:", silhouette_score(X_pca, clustering_labels))
+        #print("KMeans:", silhouette_score(X_pca, clustering_labels))
         print("Agglomerative Clustering:", silhouette_score(X_pca, agg_labels))
             
         fig, axes = plt.subplots(nrows=1, ncols=2,figsize = figsize)
-
-        # Visualize KMeans clusters
-        axes[0].scatter(X_pca[:, 0], X_pca[:, 1], c=clustering_labels, cmap='plasma', marker='.')#, s=70)
-        axes[0].set_title('KMeans Clustering')
-
+ 
         # Visualize Agglomerative Clustering clusters
-        axes[1].scatter(X_pca[:, 0], X_pca[:, 1], c=agg_labels, cmap='plasma', marker='.')#, s=70)
-        axes[1].set_title('Agglomerative Clustering')
-        
-        plt.show()
-
-        fig, axes = plt.subplots(nrows=1, ncols=2,figsize = figsize)
-        
-        axes[0].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=clustering_labels, cmap='plasma')
-        axes[0].set_title('KMeans Clustering')
+        axes[0].scatter(X_pca[:, 0], X_pca[:, 1], c=agg_labels, cmap='plasma', marker='.')#, s=70)
+        axes[0].set_title('Agglomerative Clustering')
 
         # Visualize Agglomerative Clustering clusters in 3D
         axes[1].scatter(X_pca[:, 0], X_pca[:, 1], X_pca[:, 2], c=agg_labels, cmap='plasma')
         axes[1].set_title('Agglomerative Clustering')
         plt.show() 
+        
         data_with_clusters = pd.DataFrame({'taxnumberprovider': self.qualifying_users,
                                             'feature_vector': self.corpus.squeeze() if isinstance(self.corpus,pd.DataFrame) else self.corpus,
-                                            'Cluster': clustering_labels})
+                                            'Cluster': agg_labels})
         
         return data_with_clusters
     
@@ -221,7 +211,6 @@ class UserSpaceGenerator(UserVector):
         # Open the file for writing
         with open(self.save_directory+'/BERT_model.pkl', 'wb') as model_file:
             pickle.dump(self.model, model_file)
-            
          
         with open(self.save_directory+'/BERT_tokenizer.pkl', 'wb') as model_file:
             pickle.dump(self.tokenizer, model_file)
