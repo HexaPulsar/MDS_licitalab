@@ -18,7 +18,7 @@ class RecommenderSystem(UserSpace):
                  test: pd.DataFrame,
                  userspace_data_path:str = None,
                  save_path:str = os.getcwd(),
-                 elbow_range:np.linspace =  np.linspace(200,250,45,dtype = int)) -> None:
+                 elbow_range:np.linspace =  np.linspace(150,250,15,dtype = int)) -> None:
         
         self.train = train
         self.test = test
