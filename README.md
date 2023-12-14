@@ -18,4 +18,7 @@ Analizar el historial de participación de diversas empresas en licitaciones y g
 2. `\data` contiene el archivo .sql utilizado para seleccionar los datos utilizados al construir y probar el sistema de recomendación.
 3. `ShowcaseSystem.ipynb` muestra como lanzar y utilizar el sistema de recomendación.
 
+Al lanzar inicializar un sistema de recomendación, se autogenerarán archivos necesarios. Esto solo ocurre una vez, al menos que el sistema de recomendación no pueda encontrar los archivos necesaarios, en ese caso se regenerará.
+
+
 
